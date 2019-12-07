@@ -40,6 +40,13 @@ namespace Core.Services.Services
             return results;
         }
 
+        public async Task<dynamic[]> GetItemsBySqlQuery(SqlQuerySpec sqlSpec, string collectionId)
+        {
+            return client.CreateDocumentQuery(
+                    UriFactory.CreateDocumentCollectionUri(databaseId, collectionId), sqlSpec,
+                    new FeedOptions { MaxItemCount = -1 }).ToArray();
+        }
+
         public async Task<IEnumerable<T>> GetItemsAsync(string collectionId)
         {
             IDocumentQuery<T> query = client.CreateDocumentQuery<T>(

@@ -12,27 +12,61 @@ using Core.Services.Data;
 using Core.Services.Interfaces;
 using Core.Services.Services;
 using Microsoft.Azure.Documents;
+using System.Linq;
 
 namespace SessionFunction
 {
-    public static class AddOrUpdateSession
+    public static class GetPreviousRep
     {
-        [FunctionName("AddOrUpdateSession")]
-        public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post","put", Route = "AddOrUpdateSession")] HttpRequest req,
-            ILogger log)
+        [FunctionName("GetPreviousActivityByEquipment")]
+        public static async Task Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetPreviousActivityByEquipment/{equipmentId}")] HttpRequest req, string equipmentId, ILogger log)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            log.LogInformation("C# HTTP trigger getting the previous activity.");
 
-            string name = req.Query["name"];
+            IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
+            var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
+            var spec = new SqlQuerySpec("SELECT c.Activities[0].Sets FROM c WHERE c.Activities[0].Equipment.id = @equipmentId ORDER BY c.SessionDate DESC", new SqlParameterCollection(new SqlParameter[] { new SqlParameter { Name = "@equipmentId", Value = equipmentId } }));
 
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            name = name ?? data?.name;
+            //var results = await Repository.GetItemsBySqlQuery(spec, collectionId, "");
+        }
+    }
 
-            return name != null
-                ? (ActionResult)new OkObjectResult($"Hello, {name}")
-                : new BadRequestObjectResult("Please pass a name on the query string or in the request body");
+    public static class UpsertActivity
+    {
+        [FunctionName("UpsertActivity")]
+        public static async Task<bool> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", "put", Route = "UpsertSession/{sessionId}/{sessionType}")] HttpRequest req, string sessionId, string sessionType, ILogger log)
+        {
+            log.LogInformation("C# HTTP trigger function add an activity to a session.");
+            var returnSession = new Session();
+
+            try
+            {
+                var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
+                var repo = new DocumentDbRepository<Session>();
+                var activeSessions = await repo.GetItemsAsync(s => s.Id == sessionId && s.SessionType == sessionType, collectionId);
+                if (activeSessions == null)
+                {
+                    log.LogWarning("Could not find a valid session.");
+                    return false;
+                }
+
+                var activeSession = activeSessions.First();
+
+                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                var activityToUpdate = JsonConvert.DeserializeObject<Activity>(requestBody);
+
+                activeSession.Activities.RemoveAll(d => d.Id == activityToUpdate.Id);
+
+                activeSession.Activities.Add(activityToUpdate);
+
+                await repo.UpdateItemAsync(activeSession.Id, activeSession, collectionId);
+                return true;
+            }
+            catch
+            {
+                log.LogError("Error occured while creating a record in Cosmos Db");
+                return false;
+            }
         }
     }
 
@@ -114,7 +148,7 @@ namespace SessionFunction
             var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
 
             IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
-            return await Repository.GetItemsAsync(collectionId);
+            return (await Repository.GetItemsAsync(collectionId)).ToList().OrderByDescending(r => r.SessionDate);
         }
     }
 }

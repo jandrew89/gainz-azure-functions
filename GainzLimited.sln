@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core.Services", "Core.Servi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SessionFunction", "SessionFunction\SessionFunction.csproj", "{C545AE13-AFA9-4FCE-A45D-0B2DFF2629B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GainzChangeFeed", "GainzChangeFeed\GainzChangeFeed.csproj", "{48BD6DC1-D6D8-409B-B979-42932AC97B58}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GainzChangeFeed", "GainzChangeFeed\GainzChangeFeed.csproj", "{48BD6DC1-D6D8-409B-B979-42932AC97B58}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

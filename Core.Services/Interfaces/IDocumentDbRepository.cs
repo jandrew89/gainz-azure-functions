@@ -13,5 +13,6 @@ namespace Core.Services.Interfaces
         Task<IEnumerable<T>> GetItemsAsync(Expression<Func<T, bool>> predicate, string collectionId);
         Task<IEnumerable<T>> GetItemsAsync(string collectionId);
         Task<Document> UpdateItemAsync(string id, T item, string collectionId);
+        Task<dynamic[]> GetItemsBySqlQuery(SqlQuerySpec sqlSpec, string collectionId);
     }
 }
