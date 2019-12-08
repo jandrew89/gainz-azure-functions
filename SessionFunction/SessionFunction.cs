@@ -16,18 +16,25 @@ using System.Linq;
 
 namespace SessionFunction
 {
-    public static class GetPreviousRep
+    public static class GetPreviousSet
     {
-        [FunctionName("GetPreviousActivityByEquipment")]
-        public static async Task Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetPreviousActivityByEquipment/{equipmentId}")] HttpRequest req, string equipmentId, ILogger log)
+        [FunctionName("GetPreviousSetByEquipment")]
+        public static async Task Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetPreviousSetByEquipment/{equipmentId}/{sessionType}")] HttpRequest req, string equipmentId, string sessionType, ILogger log)
         {
             log.LogInformation("C# HTTP trigger getting the previous activity.");
 
             IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
             var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
-            var spec = new SqlQuerySpec("SELECT c.Activities[0].Sets FROM c WHERE c.Activities[0].Equipment.id = @equipmentId ORDER BY c.SessionDate DESC", new SqlParameterCollection(new SqlParameter[] { new SqlParameter { Name = "@equipmentId", Value = equipmentId } }));
+            var sqlSpec = new SqlQuerySpec("SELECT c.Activities[0].Sets FROM c " +
+                "WHERE c.Activities[0].Equipment.id = @equipmentId and c.SessionType = @sessionType " +
+                "ORDER BY c.SessionDate DESC", 
+                new SqlParameterCollection(
+                    new SqlParameter[] { 
+                        new SqlParameter { Name = "@equipmentId", Value = equipmentId }, 
+                        new SqlParameter { Name = "@sessionType", Value = sessionType } 
+                    }));
 
-            //var results = await Repository.GetItemsBySqlQuery(spec, collectionId, "");
+            var results = await Repository.GetItemsBySqlQuery(sqlSpec, collectionId);
         }
     }
 
