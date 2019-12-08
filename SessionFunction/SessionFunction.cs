@@ -13,28 +13,33 @@ using Core.Services.Interfaces;
 using Core.Services.Services;
 using Microsoft.Azure.Documents;
 using System.Linq;
+using Core.Services.Data.Dto;
 
 namespace SessionFunction
 {
     public static class GetPreviousSet
     {
         [FunctionName("GetPreviousSetByEquipment")]
-        public static async Task Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetPreviousSetByEquipment/{equipmentId}/{sessionType}")] HttpRequest req, string equipmentId, string sessionType, ILogger log)
+        public static Task<SetDate[]> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetPreviousSetByEquipment/{equipmentId}/{sessionType}")] HttpRequest req, string equipmentId, string sessionType, ILogger log)
         {
             log.LogInformation("C# HTTP trigger getting the previous activity.");
 
+            //TODO: Set in env
+            var recordsToSendBack = 2;
+
             IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
             var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
-            var sqlSpec = new SqlQuerySpec("SELECT c.Activities[0].Sets FROM c " +
+            var sqlSpec = new SqlQuerySpec("SELECT TOP @records c.SessionDate, c.Activities[0].Sets FROM c " +
                 "WHERE c.Activities[0].Equipment.id = @equipmentId and c.SessionType = @sessionType " +
                 "ORDER BY c.SessionDate DESC", 
                 new SqlParameterCollection(
-                    new SqlParameter[] { 
+                    new SqlParameter[] {
+                        new SqlParameter { Name = "@records", Value = recordsToSendBack },
                         new SqlParameter { Name = "@equipmentId", Value = equipmentId }, 
                         new SqlParameter { Name = "@sessionType", Value = sessionType } 
                     }));
 
-            var results = await Repository.GetItemsBySqlQuery(sqlSpec, collectionId);
+            return Task.FromResult(Repository.GetItemsBySqlQuery<SetDate>(sqlSpec, collectionId));
         }
     }
 
@@ -102,6 +107,7 @@ namespace SessionFunction
                     document = await repo.UpdateItemAsync(session.Id, session, collectionId);
                 }
 
+                returnSession.SessionType = document.GetPropertyValue<string>("SessionType");
                 returnSession.Id = document.Id;
                 return returnSession;
             }
