@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Core.Services.Data
 {
@@ -6,7 +7,7 @@ namespace Core.Services.Data
     {
         [JsonProperty(PropertyName = "id")]
         public string Id { get; set; }
-        public string Name { get; set; }
-        public string SessionType { get; set; }
+        public string name { get; set; }
+        public List<SessionType> SessionTypes { get; set; }
     }
 }

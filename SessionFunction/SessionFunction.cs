@@ -49,7 +49,6 @@ namespace SessionFunction
         public static async Task<bool> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", "put", Route = "UpsertSession/{sessionId}/{sessionType}")] HttpRequest req, string sessionId, string sessionType, ILogger log)
         {
             log.LogInformation("C# HTTP trigger function add an activity to a session.");
-            var returnSession = new Session();
 
             try
             {
