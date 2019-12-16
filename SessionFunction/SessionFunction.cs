@@ -96,6 +96,7 @@ namespace SessionFunction
                 var document = new Document();
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
                 var session = JsonConvert.DeserializeObject<Session>(requestBody);
+
                 if (req.Method == "POST")
                 {
                     session.Id = null;
@@ -161,6 +162,32 @@ namespace SessionFunction
 
             IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
             return (await Repository.GetItemsAsync(collectionId)).ToList().OrderByDescending(r => r.SessionDate);
+        }
+    }
+
+    public static class DeleteActivity
+    {
+        [FunctionName("DeleteActivity")]
+        public static async Task<bool> Run([HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "DeleteActivity/{sessionId}/{activityId}/{sessionType}")] HttpRequest req, ILogger log, string sessionId, string activityId, string sessionType)
+        {
+            log.LogInformation("C# HTTP delete activity from cosmos.");
+            try
+            {
+                var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
+
+
+                IDocumentDbRepository<Session> repo = new DocumentDbRepository<Session>();
+                var session = await repo.GetItemsAsync(s => s.Id == sessionId && s.SessionType == sessionType, collectionId);
+
+                session.First().Activities.RemoveAll(a => a.Id == activityId);
+
+                await repo.UpdateItemAsync(session.First().Id, session.First(), collectionId);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
