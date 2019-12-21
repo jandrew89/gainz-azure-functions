@@ -29,9 +29,11 @@ namespace SessionFunction
 
             IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
             var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
-            var sqlSpec = new SqlQuerySpec("SELECT TOP @records c.SessionDate, c.Activities[0].Sets FROM c " +
-                "WHERE c.Activities[0].Equipment.id = @equipmentId and c.SessionType = @sessionType " +
-                "ORDER BY c.SessionDate DESC", 
+            var sqlSpec = new SqlQuerySpec("SELECT s.SessionType, a.Sets " +
+                "FROM Sessions s " +
+                "JOIN a IN s.Activities WHERE a.Equipment.id = @equipmentId and " +
+                "s.SessionType = @sessionType " +
+                "ORDER BY s.SessionDate DESC  OFFSET 1 LIMIT @records",
                 new SqlParameterCollection(
                     new SqlParameter[] {
                         new SqlParameter { Name = "@records", Value = recordsToSendBack },
