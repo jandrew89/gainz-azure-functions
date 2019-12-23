@@ -29,7 +29,7 @@ namespace SessionFunction
 
             IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
             var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
-            var sqlSpec = new SqlQuerySpec("SELECT s.SessionType, a.Sets " +
+            var sqlSpec = new SqlQuerySpec("SELECT s.SessionDate, a.Sets " +
                 "FROM Sessions s " +
                 "JOIN a IN s.Activities WHERE a.Equipment.id = @equipmentId and " +
                 "s.SessionType = @sessionType " +
