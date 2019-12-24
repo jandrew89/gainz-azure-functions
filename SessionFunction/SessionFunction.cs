@@ -13,21 +13,35 @@ using Core.Services.Interfaces;
 using Core.Services.Services;
 using Microsoft.Azure.Documents;
 using System.Linq;
+using Core.Services.Data.Dto;
 
 namespace SessionFunction
 {
-    public static class GetPreviousRep
+    public static class GetPreviousSet
     {
-        [FunctionName("GetPreviousActivityByEquipment")]
-        public static async Task Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetPreviousActivityByEquipment/{equipmentId}")] HttpRequest req, string equipmentId, ILogger log)
+        [FunctionName("GetPreviousSetByEquipment")]
+        public static Task<SetDate[]> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetPreviousSetByEquipment/{equipmentId}/{sessionType}")] HttpRequest req, string equipmentId, string sessionType, ILogger log)
         {
             log.LogInformation("C# HTTP trigger getting the previous activity.");
 
+            //TODO: Set in env
+            var recordsToSendBack = 2;
+
             IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
             var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
-            var spec = new SqlQuerySpec("SELECT c.Activities[0].Sets FROM c WHERE c.Activities[0].Equipment.id = @equipmentId ORDER BY c.SessionDate DESC", new SqlParameterCollection(new SqlParameter[] { new SqlParameter { Name = "@equipmentId", Value = equipmentId } }));
+            var sqlSpec = new SqlQuerySpec("SELECT s.SessionDate, a.Sets " +
+                "FROM Sessions s " +
+                "JOIN a IN s.Activities WHERE a.Equipment.id = @equipmentId and " +
+                "s.SessionType = @sessionType " +
+                "ORDER BY s.SessionDate DESC  OFFSET 1 LIMIT @records",
+                new SqlParameterCollection(
+                    new SqlParameter[] {
+                        new SqlParameter { Name = "@records", Value = recordsToSendBack },
+                        new SqlParameter { Name = "@equipmentId", Value = equipmentId }, 
+                        new SqlParameter { Name = "@sessionType", Value = sessionType } 
+                    }));
 
-            //var results = await Repository.GetItemsBySqlQuery(spec, collectionId, "");
+            return Task.FromResult(Repository.GetItemsBySqlQuery<SetDate>(sqlSpec, collectionId));
         }
     }
 
@@ -37,7 +51,6 @@ namespace SessionFunction
         public static async Task<bool> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", "put", Route = "UpsertSession/{sessionId}/{sessionType}")] HttpRequest req, string sessionId, string sessionType, ILogger log)
         {
             log.LogInformation("C# HTTP trigger function add an activity to a session.");
-            var returnSession = new Session();
 
             try
             {
@@ -85,6 +98,7 @@ namespace SessionFunction
                 var document = new Document();
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
                 var session = JsonConvert.DeserializeObject<Session>(requestBody);
+
                 if (req.Method == "POST")
                 {
                     session.Id = null;
@@ -95,6 +109,7 @@ namespace SessionFunction
                     document = await repo.UpdateItemAsync(session.Id, session, collectionId);
                 }
 
+                returnSession.SessionType = document.GetPropertyValue<string>("SessionType");
                 returnSession.Id = document.Id;
                 return returnSession;
             }
@@ -149,6 +164,32 @@ namespace SessionFunction
 
             IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
             return (await Repository.GetItemsAsync(collectionId)).ToList().OrderByDescending(r => r.SessionDate);
+        }
+    }
+
+    public static class DeleteActivity
+    {
+        [FunctionName("DeleteActivity")]
+        public static async Task<bool> Run([HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "DeleteActivity/{sessionId}/{activityId}/{sessionType}")] HttpRequest req, ILogger log, string sessionId, string activityId, string sessionType)
+        {
+            log.LogInformation("C# HTTP delete activity from cosmos.");
+            try
+            {
+                var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
+
+
+                IDocumentDbRepository<Session> repo = new DocumentDbRepository<Session>();
+                var session = await repo.GetItemsAsync(s => s.Id == sessionId && s.SessionType == sessionType, collectionId);
+
+                session.First().Activities.RemoveAll(a => a.Id == activityId);
+
+                await repo.UpdateItemAsync(session.First().Id, session.First(), collectionId);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

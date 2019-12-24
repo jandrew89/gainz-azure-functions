@@ -28,6 +28,19 @@ namespace EquipmentFunction
         }
     }
 
+    public static class GetSessionTypes
+    {
+        [FunctionName("GetSessionTypes")]
+        public static async Task<IEnumerable<SessionType>> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetSessionTypes")] HttpRequest req, ILogger log)
+        {
+            log.LogInformation("C# HTTP trigger function geting all equipment.");
+
+            IDocumentDbRepository<SessionType> Repository = new DocumentDbRepository<SessionType>();
+            var collectionId = Environment.GetEnvironmentVariable("SessionTypeCollectionId");
+            return await Repository.GetItemsAsync(collectionId);
+        }
+    }
+
     public static class CreateOrUpdateEquipment
     {
         [FunctionName("CreateOrUpdateEquipment")]

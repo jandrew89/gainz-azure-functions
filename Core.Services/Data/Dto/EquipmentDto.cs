@@ -1,13 +1,11 @@
 ﻿using Newtonsoft.Json;
-using System.Collections.Generic;
 
-namespace Core.Services.Data
+namespace Core.Services.Data.Dto
 {
-    public class Equipment
+    public class EquipmentDto
     {
         [JsonProperty(PropertyName = "id")]
         public string Id { get; set; }
         public string name { get; set; }
-        public List<SessionType> SessionTypes { get; set; }
     }
 }
