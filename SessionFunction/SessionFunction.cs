@@ -121,19 +121,6 @@ namespace SessionFunction
         }
     }
 
-    public static class GetAllActivities
-    {
-        [FunctionName("GetAllActivities")]
-        public static async Task<IEnumerable<Activity>> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetAllActivities")] HttpRequest req, ILogger log)
-        {
-            log.LogInformation("C# HTTP trigger function processed a request.");
-
-            IDocumentDbRepository<Activity> Repository = new DocumentDbRepository<Activity>();
-            var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
-            return await Repository.GetItemsAsync(collectionId);
-        }
-    }
-
     public static class GetSession
     {
         [FunctionName("GetSession")]
@@ -157,7 +144,7 @@ namespace SessionFunction
     public static class GetAllSessions
     {
         [FunctionName("GetAllSessions")]
-        public static async Task<IEnumerable<Session>> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "Get")] HttpRequest req, ILogger log)
+        public static async Task<IEnumerable<Session>> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetAllSessions")] HttpRequest req, ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
             var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
