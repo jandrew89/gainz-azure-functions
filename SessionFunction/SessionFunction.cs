@@ -121,19 +121,6 @@ namespace SessionFunction
         }
     }
 
-    public static class GetAllActivities
-    {
-        [FunctionName("GetAllActivities")]
-        public static async Task<IEnumerable<Activity>> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetAllActivities")] HttpRequest req, ILogger log)
-        {
-            log.LogInformation("C# HTTP trigger function processed a request.");
-
-            IDocumentDbRepository<Activity> Repository = new DocumentDbRepository<Activity>();
-            var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
-            return await Repository.GetItemsAsync(collectionId);
-        }
-    }
-
     public static class GetSession
     {
         [FunctionName("GetSession")]
@@ -157,7 +144,7 @@ namespace SessionFunction
     public static class GetAllSessions
     {
         [FunctionName("GetAllSessions")]
-        public static async Task<IEnumerable<Session>> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "Get")] HttpRequest req, ILogger log)
+        public static async Task<IEnumerable<Session>> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetAllSessions")] HttpRequest req, ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
             var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
@@ -179,11 +166,32 @@ namespace SessionFunction
 
 
                 IDocumentDbRepository<Session> repo = new DocumentDbRepository<Session>();
-                var session = await repo.GetItemsAsync(s => s.Id == sessionId && s.SessionType == sessionType, collectionId);
+                var session = (await repo.GetItemsAsync(s => s.Id == sessionId && s.SessionType == sessionType, collectionId)).First();
 
-                session.First().Activities.RemoveAll(a => a.Id == activityId);
+                session.Activities.RemoveAll(a => a.Id == activityId);
 
-                await repo.UpdateItemAsync(session.First().Id, session.First(), collectionId);
+                await repo.UpdateItemAsync(session.Id, session, collectionId);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    public static class DeleteSession
+    {
+        [FunctionName("DeleteSession")]
+        public static async Task<bool> Run([HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "DeleteSession/{sessionId}/{sessionType}")] HttpRequest req, ILogger log, string sessionId, string sessionType)
+        {
+            log.LogInformation("C# HTTP delete session from cosmos.");
+            try
+            {
+                var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
+
+                IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
+                await Repository.DeleteItemAsync(sessionId, collectionId, sessionType);
                 return true;
             }
             catch
