@@ -27,6 +27,19 @@ namespace SessionPlanFunction
         }
     }
 
+    public static class GetSessionPlansBySessionType
+    {
+        [FunctionName("GetSessionPlansBySessionType")]
+        public static async Task<IEnumerable<SessionPlan>> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetSessionPlansBySessionType/{sessionType}")] HttpRequest req, string sessionType, ILogger log)
+        {
+            log.LogInformation("C# HTTP trigger function geting filtered session plans.");
+
+            IDocumentDbRepository<SessionPlan> Repository = new DocumentDbRepository<SessionPlan>();
+            var collectionId = Environment.GetEnvironmentVariable("SessionPlanCollectionId");
+            return await Repository.GetItemsAsync(sp => sp.SessionType == sessionType, collectionId);
+        }
+    }
+
     public static class UpsertSessionPlan
     {
         [FunctionName("UpsertSessionPlan")]
