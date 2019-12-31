@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Core.Services.Data.Dto;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
@@ -11,6 +12,7 @@ namespace Core.Services.Data
         public int Weight { get; set; }
         public DateTime SessionDate { get; set; }
         public string SessionType { get; set; }
+        public SessionPlanDto SessionPlan { get; set; }
         public List<Activity> Activities { get; set; }
     }
 }
