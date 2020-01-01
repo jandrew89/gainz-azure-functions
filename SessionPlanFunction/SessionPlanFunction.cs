@@ -11,6 +11,7 @@ using Core.Services.Interfaces;
 using Microsoft.Azure.Documents;
 using System.IO;
 using Newtonsoft.Json;
+using System.Linq;
 
 namespace SessionPlanFunction
 {
@@ -77,8 +78,19 @@ namespace SessionPlanFunction
 
                 if (req.Method == "POST")
                 {
-                    sessionPlan.Id = null;
-                    document = await repo.CreateItemAsync(sessionPlan, collectionId);
+                    //if name matches just update
+                    var possibleSessionPlans = await repo.GetItemsAsync(s => s.SessionPlanName == sessionPlan.SessionPlanName && s.SessionType == sessionPlan.SessionType, collectionId);
+
+                    if (!possibleSessionPlans.Any())
+                    {
+                        sessionPlan.Id = null;
+                        document = await repo.CreateItemAsync(sessionPlan, collectionId);
+                    } else
+                    {
+                        //set plan id back to session
+                        sessionPlan.Id = possibleSessionPlans.First().Id;
+                        document = await repo.UpdateItemAsync(sessionPlan.Id, sessionPlan, collectionId);
+                    }
                 }
                 else
                 {
