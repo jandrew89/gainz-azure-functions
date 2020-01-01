@@ -32,11 +32,30 @@ namespace SessionPlanFunction
         [FunctionName("GetSessionPlansBySessionType")]
         public static async Task<IEnumerable<SessionPlan>> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetSessionPlansBySessionType/{sessionType}")] HttpRequest req, string sessionType, ILogger log)
         {
-            log.LogInformation("C# HTTP trigger function geting filtered session plans.");
+            log.LogInformation("C# HTTP trigger function getting filtered session plans.");
 
             IDocumentDbRepository<SessionPlan> Repository = new DocumentDbRepository<SessionPlan>();
             var collectionId = Environment.GetEnvironmentVariable("SessionPlanCollectionId");
             return await Repository.GetItemsAsync(sp => sp.SessionType == sessionType, collectionId);
+        }
+    }
+
+    public static class GetSessionPlanBySessionPlanId
+    {
+        [FunctionName("GetSessionPlanBySessionPlanId")]
+        public static async Task<SessionPlan> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetSessionPlanBySessionPlanId/{sessionPlanId}/{sessionType}")] HttpRequest req, string sessionPlanId, string sessionType, ILogger log)
+        {
+            log.LogInformation("C# HTTP trigger function getting filtered session plans.");
+
+            IDocumentDbRepository<SessionPlan> Repository = new DocumentDbRepository<SessionPlan>();
+            var collectionId = Environment.GetEnvironmentVariable("SessionPlanCollectionId");
+            var sessionPlans = await Repository.GetItemsAsync(sp => sp.SessionType == sessionType && sp.Id == sessionPlanId, collectionId);
+            var plan = new SessionPlan();
+            foreach (var sp in sessionPlans)
+            {
+                plan = sp;
+            }
+            return plan;
         }
     }
 
