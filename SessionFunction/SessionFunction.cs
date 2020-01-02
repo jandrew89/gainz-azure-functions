@@ -149,8 +149,13 @@ namespace SessionFunction
             log.LogInformation("C# HTTP trigger function processed a request.");
             var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
 
+            //Hook to grab env data
+            //TODO: Get sessions out of user context on grab
+            // specific session data needed for load screen
+            var env = await GetEnvData.GetEnvSettings();
+
             IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
-            return (await Repository.GetItemsAsync(collectionId)).ToList().OrderByDescending(r => r.SessionDate);
+            return (await Repository.GetItemsAsync(collectionId, env.SessionsListLoadAmount)).ToList().OrderByDescending(r => r.SessionDate);
         }
     }
 
@@ -198,6 +203,26 @@ namespace SessionFunction
             {
                 return false;
             }
+        }
+    }
+
+    //Demo Data
+    public static class GetEnvData
+    {
+        public static async Task<EnvironmentSettings> GetEnvSettings()
+        {
+            try
+            {
+                var userCollectionId = Environment.GetEnvironmentVariable("UserCollectionId");
+                var userRepo = new DocumentDbRepository<Core.Services.Data.User>();
+                var u = (await userRepo.GetItemsAsync(ud => ud.LastName == "Christman", userCollectionId)).Select(s =>  s.Settings);
+                return u.First();
+            }
+            catch (AggregateException ex)
+            {
+                throw ex;
+            }
+            
         }
     }
 }

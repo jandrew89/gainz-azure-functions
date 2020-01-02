@@ -23,13 +23,17 @@ namespace Core.Services.Services
             client = new DocumentClient(new Uri(Endpoint), Key);
         }
 
-        public async Task<IEnumerable<T>> GetItemsAsync(Expression<Func<T, bool>> predicate, string collectionId)
+        public async Task<IEnumerable<T>> GetItemsAsync(Expression<Func<T, bool>> predicate, string collectionId, int? itemCount = null)
         {
-            IDocumentQuery<T> query = client.CreateDocumentQuery<T>(
+            var preQuery = client.CreateDocumentQuery<T>(
                     UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
                     new FeedOptions { MaxItemCount = -1 })
-                    .Where(predicate)
-                    .AsDocumentQuery();
+                    .Where(predicate);
+
+            if (itemCount.HasValue)
+                preQuery.Take(itemCount.Value);
+
+             var query = preQuery.AsDocumentQuery();
 
             List<T> results = new List<T>();
             while (query.HasMoreResults)
@@ -47,12 +51,23 @@ namespace Core.Services.Services
                     new FeedOptions { MaxItemCount = -1 }).ToArray();
         }
 
-        public async Task<IEnumerable<T>> GetItemsAsync(string collectionId)
+        public async Task<IEnumerable<T>> GetItemsAsync(string collectionId, int? itemCount = null)
         {
-            IDocumentQuery<T> query = client.CreateDocumentQuery<T>(
+            //Create new function for this bull shit
+            IDocumentQuery<T> query;
+
+            var preQuery = client.CreateDocumentQuery<T>(
                     UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
-                    new FeedOptions { MaxItemCount = -1 })
-                    .AsDocumentQuery();
+                    new FeedOptions { MaxItemCount = -1 });
+
+            if (itemCount.HasValue)
+            {
+                var orderedQuery = preQuery.Take(itemCount.Value);
+                query = orderedQuery.AsDocumentQuery();
+            } else
+                query = preQuery.AsDocumentQuery();
+            
+
 
             List<T> results = new List<T>();
             while (query.HasMoreResults)
