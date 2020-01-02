@@ -8,5 +8,6 @@ namespace Core.Services.Data
     {
         public string Id { get; set; }
         public string SessionType { get; set; }
+        public DateTime SessionDate { get; set; }
     }
 }
