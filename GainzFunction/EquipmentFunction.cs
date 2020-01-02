@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using Newtonsoft.Json;
+using System.Linq;
 
 namespace EquipmentFunction
 {
@@ -73,26 +74,25 @@ namespace EquipmentFunction
     }
 
     //TODO: Move to seperate user function
-    public static class GetEnvironmentVariables
+    public static class GetUser
     {
-        //TODO: dependent on userId
-        [FunctionName("GetEnvironmentVariables")]
-        public static async Task<IEnumerable<User>> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetEnvironmentVariables")] HttpRequest req, ILogger log)
+        [FunctionName("GetUser")]
+        public static async Task<User> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUser")] HttpRequest req, ILogger log)
         {
             log.LogInformation("C# HTTP trigger function geting users.");
 
             IDocumentDbRepository<User> Repository = new DocumentDbRepository<User>();
             var collectionId = Environment.GetEnvironmentVariable("UserCollectionId");
-            return await Repository.GetItemsAsync(collectionId);
+            return (await Repository.GetItemsAsync(collectionId)).First();
         }
     }
 
     //TODO: Move to seperate user function
-    public static class CreateOrUpdateEnvironmentVariables
+    public static class CreateOrUpdateEnvironmentSettings
     {
         //TODO: dependent on userId
-        [FunctionName("CreateOrUpdateEnvironmentVariables")]
-        public static async Task<bool> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", "put", Route = "CreateOrUpdateEnvironmentVariables")] HttpRequest req, ILogger log)
+        [FunctionName("CreateOrUpdateEnvironmentSettings")]
+        public static async Task<bool> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", "put", Route = "CreateOrUpdateEnvironmentSettings")] HttpRequest req, ILogger log)
         {
             log.LogInformation("C# HTTP trigger function creating users.");
             try
