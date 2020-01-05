@@ -156,7 +156,8 @@ namespace SessionFunction
                 var env = await GetEnvData.GetEnvSettings();
 
                 IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
-                return (await Repository.GetItemsAsync(collectionId, env.SessionsListLoadAmount)).ToList().OrderByDescending(r => r.SessionDate);
+                return (await Repository.GetItemsAsync(collectionId, env.SessionsListLoadAmount, s => s.SessionDate))
+                    .ToList();
             }
             catch (Exception e)
             {

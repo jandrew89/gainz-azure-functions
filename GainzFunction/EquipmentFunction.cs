@@ -99,7 +99,6 @@ namespace EquipmentFunction
             {
                 //**TODO: FIX TEMP Workaround
                 IDocumentDbRepository<User> Repository = new DocumentDbRepository<User>();
-                //Repository.GetItemsAsync();
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
                 var user = JsonConvert.DeserializeObject<User>(requestBody);
                 var collectionId = Environment.GetEnvironmentVariable("UserCollectionId");

@@ -25,7 +25,7 @@ namespace Core.Services.Services
 
         public async Task<IEnumerable<T>> GetItemsAsync(Expression<Func<T, bool>> predicate, string collectionId)
         {
-            var query = client.CreateDocumentQuery<T>(
+            IDocumentQuery<T> query = client.CreateDocumentQuery<T>(
                     UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
                     new FeedOptions { MaxItemCount = -1 })
                     .Where(predicate)
@@ -49,11 +49,10 @@ namespace Core.Services.Services
 
         public async Task<IEnumerable<T>> GetItemsAsync(string collectionId)
         {
-            var query = client.CreateDocumentQuery<T>(
+            IDocumentQuery<T> query = client.CreateDocumentQuery<T>(
                     UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
                     new FeedOptions { MaxItemCount = -1 })
                     .AsDocumentQuery();
-
 
             List<T> results = new List<T>();
             while (query.HasMoreResults)
@@ -63,11 +62,12 @@ namespace Core.Services.Services
             return results;
         }
 
-        public async Task<IEnumerable<T>> GetItemsAsync(string collectionId, int itemCount)
+        public async Task<IEnumerable<T>> GetItemsAsync<TKey>(string collectionId, int itemCount, Expression<Func<T, TKey>> orderBy)
         {
             var query = client.CreateDocumentQuery<T>(
                         UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
                         new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true })
+                        .OrderByDescending(orderBy)
                         .Take(itemCount)
                         .AsDocumentQuery();
 
