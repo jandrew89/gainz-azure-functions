@@ -23,17 +23,13 @@ namespace Core.Services.Services
             client = new DocumentClient(new Uri(Endpoint), Key);
         }
 
-        public async Task<IEnumerable<T>> GetItemsAsync(Expression<Func<T, bool>> predicate, string collectionId, int? itemCount = null)
+        public async Task<IEnumerable<T>> GetItemsAsync(Expression<Func<T, bool>> predicate, string collectionId)
         {
-            var preQuery = client.CreateDocumentQuery<T>(
+            var query = client.CreateDocumentQuery<T>(
                     UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
                     new FeedOptions { MaxItemCount = -1 })
-                    .Where(predicate);
-
-            if (itemCount.HasValue)
-                preQuery.Take(itemCount.Value);
-
-             var query = preQuery.AsDocumentQuery();
+                    .Where(predicate)
+                    .AsDocumentQuery();
 
             List<T> results = new List<T>();
             while (query.HasMoreResults)
@@ -51,22 +47,12 @@ namespace Core.Services.Services
                     new FeedOptions { MaxItemCount = -1 }).ToArray();
         }
 
-        public async Task<IEnumerable<T>> GetItemsAsync(string collectionId, int? itemCount = null)
+        public async Task<IEnumerable<T>> GetItemsAsync(string collectionId)
         {
-            //Create new function for this bull shit
-            IDocumentQuery<T> query;
-
-            var preQuery = client.CreateDocumentQuery<T>(
+            var query = client.CreateDocumentQuery<T>(
                     UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
-                    new FeedOptions { MaxItemCount = -1 });
-
-            if (itemCount.HasValue)
-            {
-                var orderedQuery = preQuery.Take(itemCount.Value);
-                query = orderedQuery.AsDocumentQuery();
-            } else
-                query = preQuery.AsDocumentQuery();
-            
+                    new FeedOptions { MaxItemCount = -1 })
+                    .AsDocumentQuery();
 
 
             List<T> results = new List<T>();
@@ -77,6 +63,21 @@ namespace Core.Services.Services
             return results;
         }
 
+        public async Task<IEnumerable<T>> GetItemsAsync(string collectionId, int itemCount)
+        {
+            var query = client.CreateDocumentQuery<T>(
+                        UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
+                        new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true })
+                        .Take(itemCount)
+                        .AsDocumentQuery();
+
+            List<T> results = new List<T>();
+            while (query.HasMoreResults)
+            {
+                results.AddRange(await query.ExecuteNextAsync<T>());
+            }
+            return results;
+        }
         public async Task<Document> CreateItemAsync(T item, string collectionId)
         {
             return await client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(databaseId, collectionId), item);

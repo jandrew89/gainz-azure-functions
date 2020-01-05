@@ -10,8 +10,9 @@ namespace Core.Services.Interfaces
     {
         Task<Document> CreateItemAsync(T item, string collectionId);
         Task DeleteItemAsync(string id, string collectionId, string partitionKey);
-        Task<IEnumerable<T>> GetItemsAsync(Expression<Func<T, bool>> predicate, string collectionId, int? itemCount = 1);
-        Task<IEnumerable<T>> GetItemsAsync(string collectionId, int? itemCount = 1);
+        Task<IEnumerable<T>> GetItemsAsync(Expression<Func<T, bool>> predicate, string collectionId);
+        Task<IEnumerable<T>> GetItemsAsync(string collectionId);
+        Task<IEnumerable<T>> GetItemsAsync(string collectionId, int itemCount);
         Task<Document> UpdateItemAsync(string id, T item, string collectionId);
         TKEY[] GetItemsBySqlQuery<TKEY>(SqlQuerySpec sqlSpec, string collectionId);
     }
