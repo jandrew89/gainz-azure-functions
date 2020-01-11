@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29409.12
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EquipmentFunction", "GainzFunction\EquipmentFunction.csproj", "{C2ACA648-BEF1-436D-92E7-5A96BFE5A609}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EquipmentFunction", "EquipmentFunction\EquipmentFunction.csproj", "{C2ACA648-BEF1-436D-92E7-5A96BFE5A609}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Functions", "Functions", "{1E5959B5-7EAD-4198-8E47-B4F5C846856D}"
 EndProject
