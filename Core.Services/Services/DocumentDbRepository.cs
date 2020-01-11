@@ -62,6 +62,22 @@ namespace Core.Services.Services
             return results;
         }
 
+        public async Task<IEnumerable<T>> GetItemsAsync<TKey>(string collectionId, int itemCount, Expression<Func<T, TKey>> orderBy)
+        {
+            var query = client.CreateDocumentQuery<T>(
+                        UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
+                        new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true })
+                        .OrderByDescending(orderBy)
+                        .Take(itemCount)
+                        .AsDocumentQuery();
+
+            List<T> results = new List<T>();
+            while (query.HasMoreResults)
+            {
+                results.AddRange(await query.ExecuteNextAsync<T>());
+            }
+            return results;
+        }
         public async Task<Document> CreateItemAsync(T item, string collectionId)
         {
             return await client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(databaseId, collectionId), item);

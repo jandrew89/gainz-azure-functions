@@ -108,4 +108,25 @@ namespace SessionPlanFunction
             }
         }
     }
+
+    public static class DeleteSessionPlan
+    {
+        [FunctionName("DeleteSessionPlan")]
+        public static async Task<bool> Run([HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "DeleteSessionPlan/{planId}/{sessionType}")] HttpRequest req, ILogger log, string planId, string sessionType)
+        {
+            log.LogInformation("C# HTTP delete plan from cosmos.");
+            try
+            {
+                var collectionId = Environment.GetEnvironmentVariable("SessionPlanCollectionId");
+
+                IDocumentDbRepository<SessionPlan> Repository = new DocumentDbRepository<SessionPlan>();
+                await Repository.DeleteItemAsync(planId, collectionId, sessionType);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
 }

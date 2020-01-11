@@ -12,6 +12,7 @@ namespace Core.Services.Interfaces
         Task DeleteItemAsync(string id, string collectionId, string partitionKey);
         Task<IEnumerable<T>> GetItemsAsync(Expression<Func<T, bool>> predicate, string collectionId);
         Task<IEnumerable<T>> GetItemsAsync(string collectionId);
+        Task<IEnumerable<T>> GetItemsAsync<TKey>(string collectionId, int itemCount, Expression<Func<T, TKey>> orderBy);
         Task<Document> UpdateItemAsync(string id, T item, string collectionId);
         TKEY[] GetItemsBySqlQuery<TKEY>(SqlQuerySpec sqlSpec, string collectionId);
     }

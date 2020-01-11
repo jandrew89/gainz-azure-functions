@@ -20,12 +20,11 @@ namespace SessionFunction
     public static class GetPreviousSet
     {
         [FunctionName("GetPreviousSetByEquipment")]
-        public static Task<SetDate[]> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetPreviousSetByEquipment/{equipmentId}/{sessionType}")] HttpRequest req, string equipmentId, string sessionType, ILogger log)
+        public static async Task<SetDate[]> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetPreviousSetByEquipment/{equipmentId}/{sessionType}")] HttpRequest req, string equipmentId, string sessionType, ILogger log)
         {
             log.LogInformation("C# HTTP trigger getting the previous activity.");
 
-            //TODO: Set in env
-            var recordsToSendBack = 2;
+            var envSettings = await GetEnvData.GetEnvSettings();
 
             IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
             var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
@@ -36,12 +35,12 @@ namespace SessionFunction
                 "ORDER BY s.SessionDate DESC  OFFSET 1 LIMIT @records",
                 new SqlParameterCollection(
                     new SqlParameter[] {
-                        new SqlParameter { Name = "@records", Value = recordsToSendBack },
+                        new SqlParameter { Name = "@records", Value = envSettings.PreviousSetLoadAmount },
                         new SqlParameter { Name = "@equipmentId", Value = equipmentId }, 
                         new SqlParameter { Name = "@sessionType", Value = sessionType } 
                     }));
 
-            return Task.FromResult(Repository.GetItemsBySqlQuery<SetDate>(sqlSpec, collectionId));
+            return Repository.GetItemsBySqlQuery<SetDate>(sqlSpec, collectionId);
         }
     }
 
@@ -149,8 +148,21 @@ namespace SessionFunction
             log.LogInformation("C# HTTP trigger function processed a request.");
             var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
 
-            IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
-            return (await Repository.GetItemsAsync(collectionId)).ToList().OrderByDescending(r => r.SessionDate);
+            //Hook to grab env data
+            //TODO: Get sessions out of user context on grab
+            // specific session data needed for load screen
+            try
+            {
+                var env = await GetEnvData.GetEnvSettings();
+
+                IDocumentDbRepository<Session> Repository = new DocumentDbRepository<Session>();
+                return (await Repository.GetItemsAsync(collectionId, env.SessionsListLoadAmount, s => s.SessionDate))
+                    .ToList();
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
         }
     }
 
@@ -198,6 +210,26 @@ namespace SessionFunction
             {
                 return false;
             }
+        }
+    }
+
+    //Demo Data
+    public static class GetEnvData
+    {
+        public static async Task<EnvironmentSettings> GetEnvSettings()
+        {
+            try
+            {
+                var userCollectionId = Environment.GetEnvironmentVariable("UserCollectionId");
+                var userRepo = new DocumentDbRepository<Core.Services.Data.User>();
+                var u = (await userRepo.GetItemsAsync(ud => ud.LastName == "Christman", userCollectionId)).Select(s =>  s.Settings);
+                return u.First();
+            }
+            catch (AggregateException ex)
+            {
+                throw ex;
+            }
+            
         }
     }
 }

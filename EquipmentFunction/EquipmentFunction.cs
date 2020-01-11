@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using Newtonsoft.Json;
+using System.Linq;
 
 namespace EquipmentFunction
 {
@@ -61,6 +62,54 @@ namespace EquipmentFunction
                 else
                 {
                     await Repository.UpdateItemAsync(Equipment.Id, Equipment, collectionId);
+                }
+                return true;
+            }
+            catch
+            {
+                log.LogError("Error occured while creating a record in Cosmos Db");
+                return false;
+            }
+        }
+    }
+
+    //TODO: Move to seperate user function
+    public static class GetUser
+    {
+        [FunctionName("GetUser")]
+        public static async Task<User> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUser")] HttpRequest req, ILogger log)
+        {
+            log.LogInformation("C# HTTP trigger function geting users.");
+
+            IDocumentDbRepository<User> Repository = new DocumentDbRepository<User>();
+            var collectionId = Environment.GetEnvironmentVariable("UserCollectionId");
+            return (await Repository.GetItemsAsync(collectionId)).First();
+        }
+    }
+
+    //TODO: Move to seperate user function
+    public static class CreateOrUpdateEnvironmentSettings
+    {
+        //TODO: dependent on userId
+        [FunctionName("CreateOrUpdateEnvironmentSettings")]
+        public static async Task<bool> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", "put", Route = "CreateOrUpdateEnvironmentSettings")] HttpRequest req, ILogger log)
+        {
+            log.LogInformation("C# HTTP trigger function creating users.");
+            try
+            {
+                //**TODO: FIX TEMP Workaround
+                IDocumentDbRepository<User> Repository = new DocumentDbRepository<User>();
+                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                var user = JsonConvert.DeserializeObject<User>(requestBody);
+                var collectionId = Environment.GetEnvironmentVariable("UserCollectionId");
+                if (req.Method == "POST")
+                {
+                    user.Id = null;
+                    await Repository.CreateItemAsync(user, collectionId);
+                }
+                else
+                {
+                    await Repository.UpdateItemAsync(user.Id, user, collectionId);
                 }
                 return true;
             }
