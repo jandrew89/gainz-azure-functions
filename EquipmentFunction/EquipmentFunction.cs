@@ -29,6 +29,23 @@ namespace EquipmentFunction
         }
     }
 
+    public static class GetEquipmentBySessionType
+    {
+        [FunctionName("GetEquipmentBySessionType")]
+        public static async Task<IEnumerable<Equipment>> Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetEquipmentBySessionType/{sessionType}")] HttpRequest req,
+            ILogger log, string sessionType)
+        {
+            log.LogInformation("Getting equipment by session type");
+
+            var repo = new DocumentDbRepository<Equipment>();
+            var collectionId = Environment.GetEnvironmentVariable("EquipmentCollectionId");
+
+            var results = await repo.GetItemsAsync(e => e.SessionTypes.Any(t => t.Name == sessionType), collectionId);
+            return results;
+        }
+    }
+
     public static class GetSessionTypes
     {
         [FunctionName("GetSessionTypes")]
