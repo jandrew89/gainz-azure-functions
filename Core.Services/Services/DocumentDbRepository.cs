@@ -27,7 +27,7 @@ namespace Core.Services.Services
         {
             IDocumentQuery<T> query = client.CreateDocumentQuery<T>(
                     UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
-                    new FeedOptions { MaxItemCount = -1 })
+                    new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true })
                     .Where(predicate)
                     .AsDocumentQuery();
 
