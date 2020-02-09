@@ -11,6 +11,7 @@ using System;
 using System.IO;
 using Newtonsoft.Json;
 using System.Linq;
+using Microsoft.Azure.Documents;
 
 namespace EquipmentFunction
 {
@@ -59,6 +60,61 @@ namespace EquipmentFunction
         }
     }
 
+    public static class CreateOrUpdateSessionType
+    {
+        [FunctionName("CreateOrUpdateSessionType")]
+        public static async Task<SessionType> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", "put", Route = "CreateOrUpdateSessionType")] HttpRequest req, ILogger log)
+        {
+            log.LogInformation("C# trigger function to create a session type into cosmos.");
+            try
+            {
+                IDocumentDbRepository<SessionType> Repository = new DocumentDbRepository<SessionType>();
+                var document = new Document();
+                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+
+                var sessionType = JsonConvert.DeserializeObject<SessionType>(requestBody);
+                var collectionId = Environment.GetEnvironmentVariable("SessionTypeCollectionId");
+                if (req.Method == "POST")
+                {
+                    sessionType.Id = null;
+                    document = await Repository.CreateItemAsync(sessionType, collectionId);
+                }
+                else
+                {
+                    document = await Repository.UpdateItemAsync(sessionType.Id, sessionType, collectionId);
+                }
+                return new SessionType { Id = document.Id, Name = sessionType.Name };
+            }
+            catch
+            {
+                log.LogError("Error occured while creating a record in Cosmos Db");
+                return new SessionType();
+            }
+        }
+    }
+
+    public static class DeleteSessionType
+    {
+        [FunctionName("DeleteSessionType")]
+        public static async Task<bool> Run([HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "DeleteSessionType/{sessionTypeId}/{sessionType}")] HttpRequest req, ILogger log, string sessionTypeId, string sessionType)
+        {
+            log.LogInformation("C# HTTP delete type from cosmos.");
+            try
+            {
+                var collectionId = Environment.GetEnvironmentVariable("SessionTypeCollectionId");
+                //todo: filter out of equipment
+                IDocumentDbRepository<SessionType> Repository = new DocumentDbRepository<SessionType>();
+                await Repository.DeleteItemAsync(sessionTypeId, collectionId, sessionType);
+                return true;
+            }
+            catch (Exception e)
+            {
+                log.LogInformation("Error deleting session type.", e);
+                return false;
+            }
+        }
+    }
+
     public static class CreateOrUpdateEquipment
     {
         [FunctionName("CreateOrUpdateEquipment")]
@@ -94,11 +150,11 @@ namespace EquipmentFunction
     public static class GetUser
     {
         [FunctionName("GetUser")]
-        public static async Task<User> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUser")] HttpRequest req, ILogger log)
+        public static async Task<Core.Services.Data.User> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUser")] HttpRequest req, ILogger log)
         {
             log.LogInformation("C# HTTP trigger function geting users.");
 
-            IDocumentDbRepository<User> Repository = new DocumentDbRepository<User>();
+            IDocumentDbRepository<Core.Services.Data.User> Repository = new DocumentDbRepository<Core.Services.Data.User>();
             var collectionId = Environment.GetEnvironmentVariable("UserCollectionId");
             return (await Repository.GetItemsAsync(collectionId)).First();
         }
@@ -115,9 +171,9 @@ namespace EquipmentFunction
             try
             {
                 //**TODO: FIX TEMP Workaround
-                IDocumentDbRepository<User> Repository = new DocumentDbRepository<User>();
+                IDocumentDbRepository<Core.Services.Data.User> Repository = new DocumentDbRepository<Core.Services.Data.User>();
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-                var user = JsonConvert.DeserializeObject<User>(requestBody);
+                var user = JsonConvert.DeserializeObject<Core.Services.Data.User>(requestBody);
                 var collectionId = Environment.GetEnvironmentVariable("UserCollectionId");
                 if (req.Method == "POST")
                 {
