@@ -44,7 +44,7 @@ namespace Core.Services.Services
         {
             return client.CreateDocumentQuery<TKEY>(
                     UriFactory.CreateDocumentCollectionUri(databaseId, collectionId), sqlSpec,
-                    new FeedOptions { MaxItemCount = -1 }).ToArray();
+                    new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true }).ToArray();
         }
 
         public async Task<IEnumerable<T>> GetItemsAsync(string collectionId)
