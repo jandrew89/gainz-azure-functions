@@ -30,14 +30,14 @@ namespace SessionFunction
             var collectionId = Environment.GetEnvironmentVariable("SessionCollectionId");
             var sqlSpec = new SqlQuerySpec("SELECT s.SessionDate, a.Sets " +
                 "FROM Sessions s " +
-                "JOIN a IN s.Activities WHERE a.Equipment.id = @equipmentId and " +
-                "s.SessionType = @sessionType " +
-                "ORDER BY s.SessionDate DESC  OFFSET 1 LIMIT @records",
+                "JOIN a IN s.Activities " +
+                "WHERE a.Equipment.id = @equipmentId " +
+                "AND ARRAY_LENGTH(a.Sets) > 0 " +
+                "ORDER BY s.SessionDate DESC  OFFSET 0 LIMIT @records",
                 new SqlParameterCollection(
                     new SqlParameter[] {
                         new SqlParameter { Name = "@records", Value = envSettings.PreviousSetLoadAmount },
-                        new SqlParameter { Name = "@equipmentId", Value = equipmentId }, 
-                        new SqlParameter { Name = "@sessionType", Value = sessionType } 
+                        new SqlParameter { Name = "@equipmentId", Value = equipmentId } 
                     }));
 
             return Repository.GetItemsBySqlQuery<SetDate>(sqlSpec, collectionId);
